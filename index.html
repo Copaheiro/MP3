@@ -1,0 +1,2015 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="MP3 Çalar" />
+  <meta id="theme-color-meta" name="theme-color" content="#0f172a" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%236366f1'/%3E%3Cstop offset='100%25' stop-color='%237c3aed'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='180' height='180' rx='40' fill='url(%23g)'/%3E%3Cpath d='M118 46l-46 13v55.5a15.5 15.5 0 1 1-10-14.5V48l56-16v69.5a15.5 15.5 0 1 1-10-14.5V46z' fill='%23ffffff'/%3E%3C/svg%3E" />
+  <title>Sesli Kütüphane — MP3 Çalar & Kesici</title>
+
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    html, body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior-y: none;
+    }
+    .safe-top {
+      padding-top: max(env(safe-area-inset-top, 0px), 12px);
+    }
+    .safe-bottom {
+      padding-bottom: max(env(safe-area-inset-bottom, 0px), 18px);
+    }
+
+    /* Sleek custom range slider */
+    input[type="range"].seek-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 9999px;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"].seek-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #6366f1;
+      border: 3px solid #ffffff;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+      cursor: pointer;
+      transition: transform 0.12s ease;
+    }
+    input[type="range"].seek-slider:active::-webkit-slider-thumb {
+      transform: scale(1.2);
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0.75; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .animate-slide-up {
+      animation: slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen flex justify-center transition-colors duration-200">
+
+  <!-- Main Native Audio Engine -->
+  <audio id="audio-engine" preload="metadata" playsinline></audio>
+
+  <!-- Hidden Mini Preview Audio Engine (used inside Split Modal) -->
+  <audio id="preview-audio" preload="metadata" playsinline></audio>
+
+  <!-- Hidden Multi-File Picker -->
+  <input id="mp3-file-input" type="file" multiple accept="audio/*,.mp3,.m4a,.wav,.aac,.ogg" class="hidden" onchange="handleFilesSelected(event)" />
+
+  <!-- Mobile App Shell -->
+  <div class="w-full max-w-[480px] min-h-screen bg-slate-50 dark:bg-slate-900 sm:shadow-2xl flex flex-col relative overflow-x-hidden">
+
+    <!-- Top Header -->
+    <header class="sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 pb-3 safe-top flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white shadow-md shrink-0">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 01-.99-3.467l2.31-.66A2.25 2.25 0 009 15.553z" />
+          </svg>
+        </div>
+        <div class="min-w-0">
+          <h1 class="text-sm font-extrabold text-slate-900 dark:text-white leading-tight truncate">Sesli Kütüphane</h1>
+          <p id="storage-info" class="text-[11px] font-medium text-slate-500 dark:text-slate-400 truncate">Yükleniyor...</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-1.5 shrink-0">
+        <!-- Dark / Light Theme Toggle -->
+        <button onclick="toggleTheme()" class="p-2 rounded-xl text-slate-500 dark:text-amber-300 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition" title="Koyu / Aydınlık Mod">
+          <svg id="icon-moon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+          </svg>
+          <svg id="icon-sun" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+          </svg>
+        </button>
+
+        <!-- Add MP3 Button -->
+        <button onclick="document.getElementById('mp3-file-input').click()" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm active:scale-95 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          <span>MP3 Ekle</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Active Player Card -->
+    <section class="px-3.5 pt-3.5">
+      <div class="rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 dark:from-slate-800 dark:via-indigo-950/90 dark:to-slate-900 text-white p-4 shadow-xl border border-indigo-500/20">
+        <!-- Track Info & Top Pills -->
+        <div class="flex items-start justify-between gap-2 mb-3">
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-1.5 mb-1">
+              <span id="player-status-dot" class="w-2 h-2 rounded-full bg-slate-500"></span>
+              <span id="player-status-text" class="text-[10px] font-bold uppercase tracking-wider text-indigo-300">Hazır</span>
+              <span id="player-marker-badge" class="hidden px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-200 text-[10px] font-bold"></span>
+            </div>
+            <h2 id="player-title" class="text-sm font-extrabold text-white truncate">Parça Seçilmedi</h2>
+            <p id="player-subtitle" class="text-[11px] text-slate-400 truncate mt-0.5">Kütüphaneden bir MP3 ekleyin veya seçin</p>
+          </div>
+
+          <!-- Sleep Timer Pill -->
+          <button onclick="openSleepModal()" class="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-[11px] font-semibold text-indigo-200 flex items-center gap-1 shrink-0 active:scale-95 transition">
+            <span>🌙</span>
+            <span id="sleep-pill-text">Uyku</span>
+          </button>
+        </div>
+
+        <!-- Seek Bar -->
+        <div class="mb-3">
+          <input id="seek-bar" type="range" min="0" max="100" value="0" step="0.1" disabled class="seek-slider bg-slate-700" />
+          <div class="flex items-center justify-between text-[11px] font-semibold text-slate-300 mt-1.5 tabular-nums">
+            <span id="time-elapsed">00:00</span>
+            <span id="time-remaining">-00:00</span>
+          </div>
+        </div>
+
+        <!-- Main Playback Controls -->
+        <div class="flex items-center justify-between gap-2 mb-3">
+          <!-- Speed Button -->
+          <button onclick="cyclePlaybackRate()" class="w-14 h-10 rounded-2xl bg-white/10 hover:bg-white/15 text-xs font-extrabold text-indigo-200 active:scale-95 transition" title="Oynatma hızı">
+            <span id="speed-label">1x</span>
+          </button>
+
+          <!-- -15s / Play-Pause / +15s -->
+          <div class="flex items-center gap-3">
+            <button onclick="skipSeconds(-15)" class="w-11 h-11 rounded-2xl bg-white/10 hover:bg-white/15 flex flex-col items-center justify-center active:scale-95 transition" title="15 saniye geri">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+              </svg>
+              <span class="text-[9px] font-bold -mt-0.5">15</span>
+            </button>
+
+            <button onclick="togglePlayPause()" class="w-14 h-14 rounded-full bg-indigo-500 hover:bg-indigo-400 text-white shadow-lg shadow-indigo-500/30 flex items-center justify-center active:scale-95 transition">
+              <svg id="icon-play" class="w-7 h-7 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+              <svg id="icon-pause" class="w-7 h-7 hidden" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+              </svg>
+            </button>
+
+            <button onclick="skipSeconds(15)" class="w-11 h-11 rounded-2xl bg-white/10 hover:bg-white/15 flex flex-col items-center justify-center active:scale-95 transition" title="15 saniye ileri">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 15l6-6m0 0l-6-6m6 6H9a6 6 0 000 12h3" />
+              </svg>
+              <span class="text-[9px] font-bold -mt-0.5">15</span>
+            </button>
+          </div>
+
+          <!-- Auto-Next Toggle -->
+          <button id="btn-autonext" onclick="toggleAutoNext()" class="w-14 h-10 rounded-2xl bg-white/10 hover:bg-white/15 text-[10px] font-bold flex flex-col items-center justify-center leading-tight active:scale-95 transition" title="Bitince sonraki parçaya geç">
+            <span>⏭️</span>
+            <span id="autonext-text" class="text-[9px]">Sıralı</span>
+          </button>
+        </div>
+
+        <!-- Quick Split Marker & Direct Split Row -->
+        <div class="grid grid-cols-2 gap-2 pt-2.5 border-t border-white/10">
+          <button onclick="dropMainMarker()" class="py-2 px-3 rounded-xl bg-white/10 hover:bg-white/15 text-[11px] font-bold text-amber-200 flex items-center justify-center gap-1.5 active:scale-95 transition">
+            <span>📍</span>
+            <span>Kesim İşareti</span>
+          </button>
+          <button onclick="openSplitForCurrent()" class="py-2 px-3 rounded-xl bg-indigo-500/30 hover:bg-indigo-500/40 border border-indigo-400/30 text-[11px] font-bold text-white flex items-center justify-center gap-1.5 active:scale-95 transition">
+            <span>✂️</span>
+            <span>Bu Parçayı Böl</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Library Section -->
+    <main class="flex-1 px-3.5 pt-4 pb-10 safe-bottom">
+      <div class="flex items-center justify-between mb-2.5 px-1">
+        <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Kütüphanem</h2>
+        <span id="track-count-badge" class="text-[11px] font-bold text-indigo-600 dark:text-indigo-400">0 Parça</span>
+      </div>
+
+      <!-- Search Filter (shown when >= 4 tracks) -->
+      <div id="search-box-wrap" class="hidden mb-3">
+        <div class="relative">
+          <svg class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+          </svg>
+          <input id="search-input" type="search" oninput="onSearchInput(this.value)" placeholder="Kütüphanede ara..." class="w-full rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 pl-10 pr-4 py-2.5 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+      </div>
+
+      <!-- Track List Container -->
+      <div id="track-list" class="space-y-2.5">
+        <!-- Rendered dynamically -->
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal / Bottom Sheet Overlay -->
+  <div id="modal-overlay" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-[2px] hidden items-end sm:items-center justify-center" onclick="closeModalOnBackdrop(event)">
+    <div id="modal-content" class="w-full max-w-[480px] bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-t-3xl sm:rounded-3xl p-5 max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200 dark:border-slate-800 animate-slide-up">
+      <!-- Dynamic modal content -->
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 z-[70] px-4 py-2.5 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-bold shadow-lg opacity-0 pointer-events-none transition-all duration-200 whitespace-nowrap">
+    <span id="toast-text">Kaydedildi</span>
+  </div>
+
+  <script>
+    /* ============================================================================
+       1. INDEXEDDB STORAGE ENGINE (STANDALONE REAL AUDIO BLOBS + METADATA)
+       ============================================================================ */
+    const DB_NAME = 'SesliKutuphaneMP3_Kesici_DB';
+    const DB_VERSION = 1;
+    let db = null;
+
+    function openDatabase() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = (e) => {
+          const database = e.target.result;
+          if (!database.objectStoreNames.contains('files')) {
+            database.createObjectStore('files', { keyPath: 'id' });
+          }
+          if (!database.objectStoreNames.contains('tracks')) {
+            database.createObjectStore('tracks', { keyPath: 'id' });
+          }
+        };
+        req.onsuccess = (e) => {
+          db = e.target.result;
+          resolve(db);
+        };
+        req.onerror = (e) => reject(e.target.error);
+      });
+    }
+
+    function idbPut(storeName, item) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(storeName, 'readwrite');
+        tx.objectStore(storeName).put(item);
+        tx.oncomplete = () => resolve();
+        tx.onerror = (e) => reject(e.target.error);
+      });
+    }
+
+    function idbGet(storeName, key) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(storeName, 'readonly');
+        const req = tx.objectStore(storeName).get(key);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = (e) => reject(e.target.error);
+      });
+    }
+
+    function idbGetAll(storeName) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(storeName, 'readonly');
+        const req = tx.objectStore(storeName).getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = (e) => reject(e.target.error);
+      });
+    }
+
+    function idbDelete(storeName, key) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(storeName, 'readwrite');
+        tx.objectStore(storeName).delete(key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = (e) => reject(e.target.error);
+      });
+    }
+
+    /* ============================================================================
+       2. APP STATE & PREFERENCES
+       ============================================================================ */
+    const SPEEDS = [0.75, 1, 1.25, 1.5, 2];
+    const SEG_COLORS = [
+      { bg: 'bg-indigo-500', soft: 'bg-indigo-100 dark:bg-indigo-950/70', dot: 'bg-indigo-500' },
+      { bg: 'bg-emerald-500', soft: 'bg-emerald-100 dark:bg-emerald-950/70', dot: 'bg-emerald-500' },
+      { bg: 'bg-amber-500', soft: 'bg-amber-100 dark:bg-amber-950/70', dot: 'bg-amber-500' },
+      { bg: 'bg-rose-500', soft: 'bg-rose-100 dark:bg-rose-950/70', dot: 'bg-rose-500' },
+      { bg: 'bg-sky-500', soft: 'bg-sky-100 dark:bg-sky-950/70', dot: 'bg-sky-500' },
+      { bg: 'bg-violet-500', soft: 'bg-violet-100 dark:bg-violet-950/70', dot: 'bg-violet-500' },
+      { bg: 'bg-teal-500', soft: 'bg-teal-100 dark:bg-teal-950/70', dot: 'bg-teal-500' },
+      { bg: 'bg-orange-500', soft: 'bg-orange-100 dark:bg-orange-950/70', dot: 'bg-orange-500' }
+    ];
+
+    let tracks = [];
+    let currentTrack = null;
+    let currentBlobUrl = null;
+    let isSeeking = false;
+    let lastSaveTick = 0;
+    let searchQuery = '';
+
+    let prefs = {
+      darkMode: true,
+      playbackRate: 1,
+      autoNext: true,
+      lastActiveTrackId: null
+    };
+
+    let sleepTimerEnd = null;
+    let sleepInterval = null;
+
+    const audio = document.getElementById('audio-engine');
+    const previewAudio = document.getElementById('preview-audio');
+    const seekBar = document.getElementById('seek-bar');
+
+    function loadPrefs() {
+      try {
+        const saved = JSON.parse(localStorage.getItem('mp3_kesici_prefs_v1') || '{}');
+        prefs = { ...prefs, ...saved };
+      } catch (_) {}
+      applyTheme();
+      updateSpeedUI();
+      updateAutoNextUI();
+    }
+
+    function savePrefs() {
+      try {
+        localStorage.setItem('mp3_kesici_prefs_v1', JSON.stringify(prefs));
+      } catch (_) {}
+    }
+
+    function saveLocalPosMirror(trackId, pos) {
+      try {
+        localStorage.setItem(`mp3k_pos_${trackId}`, String(pos));
+      } catch (_) {}
+    }
+
+    function getLocalPosMirror(trackId) {
+      try {
+        const val = localStorage.getItem(`mp3k_pos_${trackId}`);
+        return val !== null ? parseFloat(val) : null;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function removeLocalPosMirror(trackId) {
+      try {
+        localStorage.removeItem(`mp3k_pos_${trackId}`);
+      } catch (_) {}
+    }
+
+    /* ============================================================================
+       3. THEME & FORMATTING UTILITIES
+       ============================================================================ */
+    function applyTheme() {
+      document.documentElement.classList.toggle('dark', prefs.darkMode);
+      const meta = document.getElementById('theme-color-meta');
+      if (meta) meta.setAttribute('content', prefs.darkMode ? '#0f172a' : '#f8fafc');
+      document.getElementById('icon-sun').classList.toggle('hidden', !prefs.darkMode);
+      document.getElementById('icon-moon').classList.toggle('hidden', prefs.darkMode);
+    }
+
+    function toggleTheme() {
+      prefs.darkMode = !prefs.darkMode;
+      savePrefs();
+      applyTheme();
+    }
+
+    function generateId(prefix = 'id') {
+      return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
+    }
+
+    function formatTime(sec) {
+      if (!isFinite(sec) || sec < 0) sec = 0;
+      const total = Math.floor(sec);
+      const h = Math.floor(total / 3600);
+      const m = Math.floor((total % 3600) / 60);
+      const s = total % 60;
+      if (h > 0) {
+        return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      }
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    function formatDurationTr(sec) {
+      if (!isFinite(sec) || sec < 0) sec = 0;
+      const total = Math.round(sec);
+      const h = Math.floor(total / 3600);
+      const m = Math.floor((total % 3600) / 60);
+      const s = total % 60;
+      if (h > 0) return `${h} sa ${m} dk`;
+      if (m > 0) return `${m} dk ${String(s).padStart(2, '0')} sn`;
+      return `${s} sn`;
+    }
+
+    function formatBytes(bytes) {
+      if (!bytes || bytes <= 0) return '0 MB';
+      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    function sanitizeFilename(name) {
+      return String(name || 'parca')
+        .replace(/[\\/:*?"<>|]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 80) || 'parca';
+    }
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    let toastTimer = null;
+    function showToast(msg, isError = false) {
+      const el = document.getElementById('toast');
+      const txt = document.getElementById('toast-text');
+      txt.textContent = msg;
+      el.className = `fixed top-16 left-1/2 -translate-x-1/2 z-[70] px-4 py-2.5 rounded-2xl text-xs font-bold shadow-lg transition-all duration-200 whitespace-nowrap ${
+        isError ? 'bg-rose-600 text-white' : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
+      }`;
+      el.style.opacity = '1';
+      el.style.transform = 'translate(-50%, 0)';
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.transform = 'translate(-50%, -8px)';
+      }, 2400);
+    }
+
+    /* ============================================================================
+       4. PURE JAVASCRIPT LOSSLESS MP3 FRAME PARSER & BYTE SLICER
+       ============================================================================ */
+    const MPEG_BITRATES = {
+      // MPEG 1
+      '3_3': [0, 32, 64, 96, 128, 160, 192, 224, 256, 288, 320, 352, 384, 416, 448], // Layer I
+      '3_2': [0, 32, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384],    // Layer II
+      '3_1': [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320],    // Layer III
+      // MPEG 2 (2) & MPEG 2.5 (0)
+      '2_3': [0, 32, 48, 56, 64, 80, 96, 112, 128, 144, 160, 176, 192, 224, 256],   // Layer I
+      '2_2': [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160],        // Layer II
+      '2_1': [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160]         // Layer III
+    };
+
+    const MPEG_SAMPLERATES = {
+      3: [44100, 48000, 32000], // MPEG 1
+      2: [22050, 24000, 16000], // MPEG 2
+      0: [11025, 12000, 8000]   // MPEG 2.5
+    };
+
+    function parseMpegHeader(bytes, offset) {
+      if (offset + 4 > bytes.length) return null;
+      const b0 = bytes[offset];
+      const b1 = bytes[offset + 1];
+      const b2 = bytes[offset + 2];
+      if (b0 !== 0xFF || (b1 & 0xE0) !== 0xE0) return null;
+
+      const versionBits = (b1 >> 3) & 0x03;
+      const layerBits = (b1 >> 1) & 0x03;
+      if (versionBits === 1 || layerBits === 0) return null;
+
+      const bitrateIdx = (b2 >> 4) & 0x0F;
+      const sampleRateIdx = (b2 >> 2) & 0x03;
+      const padding = (b2 >> 1) & 0x01;
+      if (bitrateIdx === 0 || bitrateIdx === 15 || sampleRateIdx === 3) return null;
+
+      const vKey = versionBits === 3 ? '3' : '2';
+      const bitrateTable = MPEG_BITRATES[`${vKey}_${layerBits}`];
+      const srTable = MPEG_SAMPLERATES[versionBits];
+      if (!bitrateTable || !srTable) return null;
+
+      const bitrate = bitrateTable[bitrateIdx];
+      const sampleRate = srTable[sampleRateIdx];
+      if (!bitrate || !sampleRate) return null;
+
+      let samplesPerFrame = 1152;
+      if (layerBits === 3) {
+        samplesPerFrame = 384; // Layer I
+      } else if (layerBits === 1 && versionBits !== 3) {
+        samplesPerFrame = 576; // MPEG 2 / 2.5 Layer III
+      }
+
+      let frameLength = 0;
+      if (layerBits === 3) {
+        frameLength = Math.floor((12 * bitrate * 1000 / sampleRate + padding) * 4);
+      } else {
+        frameLength = Math.floor(((samplesPerFrame / 8) * bitrate * 1000) / sampleRate) + padding;
+      }
+
+      if (frameLength < 24 || offset + frameLength > bytes.length) return null;
+      return {
+        frameLength,
+        frameDuration: samplesPerFrame / sampleRate,
+        sampleRate,
+        bitrate
+      };
+    }
+
+    function frameHasVbrHeader(bytes, offset, frameLength) {
+      // Search inside the first MPEG frame for 'Xing', 'Info', or 'VBRI'
+      const end = Math.min(bytes.length, offset + frameLength);
+      for (let i = offset + 4; i <= end - 4; i++) {
+        const c0 = bytes[i], c1 = bytes[i + 1], c2 = bytes[i + 2], c3 = bytes[i + 3];
+        if (
+          (c0 === 0x58 && c1 === 0x69 && c2 === 0x6E && c3 === 0x67) || // Xing
+          (c0 === 0x49 && c1 === 0x6E && c2 === 0x66 && c3 === 0x6F) || // Info
+          (c0 === 0x56 && c1 === 0x42 && c2 === 0x52 && c3 === 0x49)    // VBRI
+        ) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function indexMp3Frames(arrayBuffer) {
+      const bytes = new Uint8Array(arrayBuffer);
+      let offset = 0;
+      let endLimit = bytes.length;
+
+      // 1. Skip ID3v2 header(s) at start
+      while (offset + 10 <= endLimit && bytes[offset] === 0x49 && bytes[offset + 1] === 0x44 && bytes[offset + 2] === 0x33) {
+        const flags = bytes[offset + 5];
+        const tagSize =
+          ((bytes[offset + 6] & 0x7F) << 21) |
+          ((bytes[offset + 7] & 0x7F) << 14) |
+          ((bytes[offset + 8] & 0x7F) << 7) |
+          (bytes[offset + 9] & 0x7F);
+        const hasFooter = (flags & 0x10) !== 0;
+        offset += 10 + tagSize + (hasFooter ? 10 : 0);
+      }
+
+      // 2. Exclude trailing ID3v1 tag ('TAG' at last 128 bytes)
+      if (endLimit >= 128 && bytes[endLimit - 128] === 0x54 && bytes[endLimit - 127] === 0x41 && bytes[endLimit - 126] === 0x47) {
+        endLimit -= 128;
+      }
+
+      // 3. Find first reliable sync (confirm next frame sync too)
+      let firstSync = -1;
+      const maxScan = Math.min(endLimit, offset + 262144);
+      for (let i = offset; i < maxScan - 4; i++) {
+        const h1 = parseMpegHeader(bytes, i);
+        if (h1 && i + h1.frameLength < endLimit) {
+          const h2 = parseMpegHeader(bytes, i + h1.frameLength);
+          if (h2) {
+            firstSync = i;
+            break;
+          }
+        }
+      }
+
+      if (firstSync === -1) return null;
+
+      // 4. Walk all MPEG frames using compact growable typed arrays
+      let capacity = 16384;
+      let offsets = new Uint32Array(capacity);
+      let times = new Float32Array(capacity);
+      let count = 0;
+      let pos = firstSync;
+      let currentTime = 0;
+      let checkedFirstFrame = false;
+      let lastFrameEnd = firstSync;
+
+      while (pos + 4 <= endLimit) {
+        const hdr = parseMpegHeader(bytes, pos);
+        if (!hdr || pos + hdr.frameLength > endLimit) {
+          pos++;
+          continue;
+        }
+
+        // Skip Xing/Info/VBRI header frame so sliced MP3 reports its own true duration
+        if (!checkedFirstFrame) {
+          checkedFirstFrame = true;
+          if (frameHasVbrHeader(bytes, pos, hdr.frameLength)) {
+            pos += hdr.frameLength;
+            continue;
+          }
+        }
+
+        if (count >= capacity) {
+          capacity *= 2;
+          const newOffsets = new Uint32Array(capacity);
+          const newTimes = new Float32Array(capacity);
+          newOffsets.set(offsets);
+          newTimes.set(times);
+          offsets = newOffsets;
+          times = newTimes;
+        }
+
+        offsets[count] = pos;
+        times[count] = currentTime;
+        count++;
+        currentTime += hdr.frameDuration;
+        pos += hdr.frameLength;
+        lastFrameEnd = pos;
+      }
+
+      if (count < 10) return null;
+      return {
+        offsets: offsets.subarray(0, count),
+        times: times.subarray(0, count),
+        count,
+        totalDuration: currentTime,
+        lastFrameEnd
+      };
+    }
+
+    function findFrameIndexByTime(times, count, targetSec) {
+      let lo = 0, hi = count - 1, ans = count;
+      while (lo <= hi) {
+        const mid = (lo + hi) >>> 1;
+        if (times[mid] >= targetSec) {
+          ans = mid;
+          hi = mid - 1;
+        } else {
+          lo = mid + 1;
+        }
+      }
+      return ans;
+    }
+
+    function sliceMp3Buffer(arrayBuffer, frameIndex, startSec, endSec) {
+      const startIdx = Math.min(frameIndex.count - 1, findFrameIndexByTime(frameIndex.times, frameIndex.count, Math.max(0, startSec)));
+      const endIdx = findFrameIndexByTime(frameIndex.times, frameIndex.count, endSec);
+
+      const startByte = frameIndex.offsets[startIdx];
+      const endByte = endIdx < frameIndex.count ? frameIndex.offsets[endIdx] : frameIndex.lastFrameEnd;
+      const safeEnd = Math.max(startByte, endByte);
+
+      const sliced = arrayBuffer.slice(startByte, safeEnd);
+      const actualStart = frameIndex.times[startIdx];
+      const actualEnd = endIdx < frameIndex.count ? frameIndex.times[endIdx] : frameIndex.totalDuration;
+      return {
+        blob: new Blob([sliced], { type: 'audio/mpeg' }),
+        duration: Math.max(0.5, actualEnd - actualStart),
+        ext: 'mp3',
+        mimeType: 'audio/mpeg'
+      };
+    }
+
+    /* ---------- Fallback WAV Encoder for Non-MP3 Files (M4A, WAV, OGG) ---------- */
+    function encodeAudioBufferSegmentToWav(audioBuffer, startSec, endSec) {
+      const sampleRate = audioBuffer.sampleRate;
+      const numChannels = audioBuffer.numberOfChannels;
+      const startSample = Math.max(0, Math.floor(startSec * sampleRate));
+      const endSample = Math.min(audioBuffer.length, Math.floor(endSec * sampleRate));
+      const frameCount = Math.max(1, endSample - startSample);
+
+      const bytesPerSample = 2;
+      const blockAlign = numChannels * bytesPerSample;
+      const dataSize = frameCount * blockAlign;
+      const buffer = new ArrayBuffer(44 + dataSize);
+      const view = new DataView(buffer);
+
+      const writeStr = (off, str) => {
+        for (let i = 0; i < str.length; i++) view.setUint8(off + i, str.charCodeAt(i));
+      };
+
+      writeStr(0, 'RIFF');
+      view.setUint32(4, 36 + dataSize, true);
+      writeStr(8, 'WAVE');
+      writeStr(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, numChannels, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * blockAlign, true);
+      view.setUint16(32, blockAlign, true);
+      view.setUint16(34, 16, true);
+      writeStr(36, 'data');
+      view.setUint32(40, dataSize, true);
+
+      const channels = [];
+      for (let c = 0; c < numChannels; c++) {
+        channels.push(audioBuffer.getChannelData(c));
+      }
+
+      let pos = 44;
+      for (let i = startSample; i < endSample; i++) {
+        for (let c = 0; c < numChannels; c++) {
+          let s = channels[c][i];
+          s = Math.max(-1, Math.min(1, s));
+          view.setInt16(pos, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+          pos += 2;
+        }
+      }
+
+      return {
+        blob: new Blob([buffer], { type: 'audio/wav' }),
+        duration: frameCount / sampleRate,
+        ext: 'wav',
+        mimeType: 'audio/wav'
+      };
+    }
+
+    /* ============================================================================
+       5. FILE UPLOAD & METADATA EXTRACTION
+       ============================================================================ */
+    function readAudioDuration(fileOrBlob) {
+      return new Promise((resolve) => {
+        const tempUrl = URL.createObjectURL(fileOrBlob);
+        const tempAudio = new Audio();
+        tempAudio.preload = 'metadata';
+        tempAudio.onloadedmetadata = () => {
+          const dur = isFinite(tempAudio.duration) ? tempAudio.duration : 0;
+          URL.revokeObjectURL(tempUrl);
+          resolve(dur);
+        };
+        tempAudio.onerror = () => {
+          URL.revokeObjectURL(tempUrl);
+          resolve(0);
+        };
+        tempAudio.src = tempUrl;
+      });
+    }
+
+    async function handleFilesSelected(event) {
+      const files = Array.from(event.target.files || []);
+      if (!files.length) return;
+
+      showToast(`${files.length} dosya yükleniyor...`);
+      let addedCount = 0;
+
+      for (const file of files) {
+        try {
+          const duration = await readAudioDuration(file);
+          const fileId = generateId('file');
+          const cleanName = file.name.replace(/\.[^/.]+$/, '');
+
+          await idbPut('files', {
+            id: fileId,
+            name: file.name,
+            type: file.type || 'audio/mpeg',
+            size: file.size,
+            blob: file,
+            createdAt: Date.now()
+          });
+
+          const track = {
+            id: generateId('trk'),
+            fileId,
+            title: cleanName,
+            fileName: file.name,
+            mimeType: file.type || 'audio/mpeg',
+            size: file.size,
+            duration,
+            lastPosition: 0,
+            markers: [],
+            createdAt: Date.now(),
+            order: tracks.length + addedCount
+          };
+
+          await idbPut('tracks', track);
+          tracks.push(track);
+          addedCount++;
+        } catch (err) {
+          console.error('Dosya ekleme hatası:', err);
+        }
+      }
+
+      event.target.value = '';
+      renderTrackList();
+      updateStorageInfo();
+
+      if (addedCount > 0) {
+        showToast(`${addedCount} parça kütüphaneye eklendi`);
+        if (!currentTrack) {
+          await loadTrack(tracks[tracks.length - addedCount].id, false);
+        }
+      } else {
+        showToast('Dosya yüklenemedi', true);
+      }
+    }
+
+    /* ============================================================================
+       6. PLAYBACK ENGINE & AUTO-RESUME
+       ============================================================================ */
+    async function loadTrack(trackId, autoPlay = false) {
+      const track = tracks.find(t => t.id === trackId);
+      if (!track) return;
+
+      if (currentTrack && currentTrack.id !== track.id) {
+        persistCurrentPosition(true);
+      }
+
+      currentTrack = track;
+      prefs.lastActiveTrackId = track.id;
+      savePrefs();
+
+      const fileRec = await idbGet('files', track.fileId);
+      if (!fileRec || !fileRec.blob) {
+        showToast('Ses dosyası bulunamadı', true);
+        return;
+      }
+
+      if (currentBlobUrl) URL.revokeObjectURL(currentBlobUrl);
+      currentBlobUrl = URL.createObjectURL(fileRec.blob);
+      audio.src = currentBlobUrl;
+
+      const targetPos = Math.min(Math.max(0, track.lastPosition || 0), Math.max(0, (track.duration || 0) - 0.5));
+
+      const seekAndReady = () => {
+        if ((!track.duration || track.duration === 0) && isFinite(audio.duration) && audio.duration > 0) {
+          track.duration = audio.duration;
+          idbPut('tracks', track).catch(() => {});
+        }
+        try {
+          audio.currentTime = targetPos;
+        } catch (_) {}
+        audio.playbackRate = prefs.playbackRate;
+        updatePlayerUI();
+        updateMediaSession();
+        if (autoPlay) {
+          audio.play().catch(() => showToast('Oynatmak için oynat butonuna dokunun'));
+        }
+      };
+
+      if (audio.readyState >= 1) {
+        seekAndReady();
+      } else {
+        audio.onloadedmetadata = () => {
+          audio.onloadedmetadata = null;
+          seekAndReady();
+        };
+      }
+
+      renderTrackList();
+    }
+
+    function togglePlayPause() {
+      if (!currentTrack) {
+        if (tracks.length > 0) {
+          loadTrack(tracks[0].id, true);
+        } else {
+          showToast('Önce bir MP3 dosyası ekleyin');
+        }
+        return;
+      }
+
+      if (audio.paused) {
+        if (currentTrack.duration > 0 && audio.currentTime >= currentTrack.duration - 0.5) {
+          audio.currentTime = 0;
+        }
+        audio.playbackRate = prefs.playbackRate;
+        audio.play().catch(() => showToast('Oynatma başlatılamadı', true));
+      } else {
+        audio.pause();
+      }
+    }
+
+    function skipSeconds(delta) {
+      if (!currentTrack) return;
+      const maxT = audio.duration || currentTrack.duration || 0;
+      audio.currentTime = Math.min(Math.max(0, audio.currentTime + delta), maxT);
+      persistCurrentPosition(true);
+      updatePlayerUI();
+    }
+
+    function persistCurrentPosition(forceIdb = false) {
+      if (!currentTrack) return;
+      const pos = Math.max(0, audio.currentTime || 0);
+      currentTrack.lastPosition = pos;
+      saveLocalPosMirror(currentTrack.id, pos);
+
+      const now = Date.now();
+      if (forceIdb || now - lastSaveTick >= 1000) {
+        lastSaveTick = now;
+        idbPut('tracks', currentTrack).catch(() => {});
+        const progEl = document.getElementById(`prog-${currentTrack.id}`);
+        const timeEl = document.getElementById(`time-${currentTrack.id}`);
+        if (progEl && currentTrack.duration > 0) {
+          progEl.style.width = `${Math.min(100, (pos / currentTrack.duration) * 100)}%`;
+        }
+        if (timeEl) {
+          timeEl.textContent = pos > 2 ? `Kaldığı yer: ${formatTime(pos)} / ${formatTime(currentTrack.duration)}` : formatTime(currentTrack.duration);
+        }
+      }
+    }
+
+    audio.addEventListener('timeupdate', () => {
+      if (!currentTrack) return;
+      persistCurrentPosition(false);
+      if (!isSeeking) updatePlayerUI();
+    });
+
+    audio.addEventListener('play', () => {
+      updatePlayButtons(true);
+      updateMediaSession();
+    });
+
+    audio.addEventListener('pause', () => {
+      updatePlayButtons(false);
+      persistCurrentPosition(true);
+      renderTrackList();
+    });
+
+    audio.addEventListener('seeked', () => {
+      persistCurrentPosition(true);
+      updatePlayerUI();
+    });
+
+    audio.addEventListener('ended', () => {
+      if (!currentTrack) return;
+      currentTrack.lastPosition = 0;
+      saveLocalPosMirror(currentTrack.id, 0);
+      idbPut('tracks', currentTrack).catch(() => {});
+      updatePlayerUI();
+      renderTrackList();
+
+      if (prefs.autoNext) {
+        const idx = tracks.findIndex(t => t.id === currentTrack.id);
+        if (idx >= 0 && idx < tracks.length - 1) {
+          loadTrack(tracks[idx + 1].id, true);
+        }
+      }
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') persistCurrentPosition(true);
+    });
+    window.addEventListener('pagehide', () => persistCurrentPosition(true));
+
+    seekBar.addEventListener('input', () => {
+      if (!currentTrack) return;
+      isSeeking = true;
+      const val = parseFloat(seekBar.value) || 0;
+      document.getElementById('time-elapsed').textContent = formatTime(val);
+      document.getElementById('time-remaining').textContent = `-${formatTime(Math.max(0, currentTrack.duration - val))}`;
+      updateSeekBarFill(seekBar, val, currentTrack.duration);
+    });
+
+    seekBar.addEventListener('change', () => {
+      if (!currentTrack) return;
+      audio.currentTime = parseFloat(seekBar.value) || 0;
+      isSeeking = false;
+      persistCurrentPosition(true);
+      updatePlayerUI();
+    });
+
+    function updateSeekBarFill(el, current, total, trackBg = '#334155') {
+      const pct = total > 0 ? Math.min(100, Math.max(0, (current / total) * 100)) : 0;
+      el.style.background = `linear-gradient(to right, #6366f1 ${pct}%, ${trackBg} ${pct}%)`;
+    }
+
+    function updatePlayButtons(isPlaying) {
+      document.getElementById('icon-play').classList.toggle('hidden', isPlaying);
+      document.getElementById('icon-pause').classList.toggle('hidden', !isPlaying);
+      const dot = document.getElementById('player-status-dot');
+      const statusText = document.getElementById('player-status-text');
+      if (isPlaying) {
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+        statusText.textContent = 'Çalıyor';
+      } else if (currentTrack) {
+        dot.className = 'w-2 h-2 rounded-full bg-amber-400';
+        statusText.textContent = currentTrack.lastPosition > 2 ? 'Kaldığı Yerden Hazır' : 'Duraklatıldı';
+      } else {
+        dot.className = 'w-2 h-2 rounded-full bg-slate-500';
+        statusText.textContent = 'Hazır';
+      }
+    }
+
+    function updatePlayerUI() {
+      const titleEl = document.getElementById('player-title');
+      const subEl = document.getElementById('player-subtitle');
+      const markerBadge = document.getElementById('player-marker-badge');
+
+      if (!currentTrack) {
+        titleEl.textContent = 'Parça Seçilmedi';
+        subEl.textContent = 'Kütüphaneden bir MP3 ekleyin veya seçin';
+        markerBadge.classList.add('hidden');
+        seekBar.disabled = true;
+        seekBar.value = 0;
+        updateSeekBarFill(seekBar, 0, 100);
+        document.getElementById('time-elapsed').textContent = '00:00';
+        document.getElementById('time-remaining').textContent = '-00:00';
+        updatePlayButtons(false);
+        return;
+      }
+
+      titleEl.textContent = currentTrack.title;
+      subEl.textContent = `${formatDurationTr(currentTrack.duration)} • ${formatBytes(currentTrack.size)}`;
+
+      const mCount = (currentTrack.markers || []).length;
+      if (mCount > 0) {
+        markerBadge.textContent = `📍 ${mCount} işaret`;
+        markerBadge.classList.remove('hidden');
+      } else {
+        markerBadge.classList.add('hidden');
+      }
+
+      const dur = currentTrack.duration || audio.duration || 0;
+      const cur = audio.paused ? (currentTrack.lastPosition || 0) : (audio.currentTime || 0);
+
+      seekBar.disabled = false;
+      seekBar.max = dur > 0 ? dur : 100;
+      seekBar.value = cur;
+      updateSeekBarFill(seekBar, cur, dur);
+
+      document.getElementById('time-elapsed').textContent = formatTime(cur);
+      document.getElementById('time-remaining').textContent = `-${formatTime(Math.max(0, dur - cur))}`;
+      updatePlayButtons(!audio.paused);
+    }
+
+    function updateMediaSession() {
+      if (!('mediaSession' in navigator) || !currentTrack) return;
+      try {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: currentTrack.title,
+          artist: 'Sesli Kütüphane',
+          album: 'MP3 Çalar & Kesici'
+        });
+        navigator.mediaSession.setActionHandler('play', () => togglePlayPause());
+        navigator.mediaSession.setActionHandler('pause', () => togglePlayPause());
+        navigator.mediaSession.setActionHandler('seekbackward', () => skipSeconds(-15));
+        navigator.mediaSession.setActionHandler('seekforward', () => skipSeconds(15));
+        navigator.mediaSession.setActionHandler('previoustrack', () => {
+          const idx = tracks.findIndex(t => t.id === currentTrack.id);
+          if (idx > 0) loadTrack(tracks[idx - 1].id, true);
+        });
+        navigator.mediaSession.setActionHandler('nexttrack', () => {
+          const idx = tracks.findIndex(t => t.id === currentTrack.id);
+          if (idx >= 0 && idx < tracks.length - 1) loadTrack(tracks[idx + 1].id, true);
+        });
+      } catch (_) {}
+    }
+
+    /* ---------- Main Player Markers ---------- */
+    async function dropMainMarker() {
+      if (!currentTrack) {
+        showToast('Önce bir parça seçin');
+        return;
+      }
+      const pos = Math.round(audio.paused ? (currentTrack.lastPosition || 0) : (audio.currentTime || 0));
+      if (pos <= 1 || pos >= (currentTrack.duration || 0) - 1) {
+        showToast('Başlangıç veya bitişten farklı bir saniye seçin', true);
+        return;
+      }
+      if (!Array.isArray(currentTrack.markers)) currentTrack.markers = [];
+      if (currentTrack.markers.some(m => Math.abs(m - pos) < 2)) {
+        showToast(`Bu saniyede zaten işaret var (${formatTime(pos)})`);
+        return;
+      }
+      currentTrack.markers.push(pos);
+      currentTrack.markers.sort((a, b) => a - b);
+      await idbPut('tracks', currentTrack);
+      updatePlayerUI();
+      showToast(`📍 Kesim işareti eklendi: ${formatTime(pos)}`);
+    }
+
+    function openSplitForCurrent() {
+      if (!currentTrack) {
+        showToast('Önce bir parça seçin');
+        return;
+      }
+      openSplitModal(currentTrack.id);
+    }
+
+    /* ============================================================================
+       7. SPEED, AUTO-NEXT & SLEEP TIMER
+       ============================================================================ */
+    function cyclePlaybackRate() {
+      const idx = SPEEDS.indexOf(prefs.playbackRate);
+      prefs.playbackRate = SPEEDS[(idx + 1) % SPEEDS.length];
+      audio.playbackRate = prefs.playbackRate;
+      savePrefs();
+      updateSpeedUI();
+      showToast(`Oynatma hızı: ${prefs.playbackRate}x`);
+    }
+
+    function updateSpeedUI() {
+      document.getElementById('speed-label').textContent = `${prefs.playbackRate}x`;
+    }
+
+    function toggleAutoNext() {
+      prefs.autoNext = !prefs.autoNext;
+      savePrefs();
+      updateAutoNextUI();
+      showToast(prefs.autoNext ? 'Bitince sonraki parçaya geçer' : 'Parça bitince durur');
+    }
+
+    function updateAutoNextUI() {
+      const btn = document.getElementById('btn-autonext');
+      const txt = document.getElementById('autonext-text');
+      if (prefs.autoNext) {
+        btn.className = 'w-14 h-10 rounded-2xl bg-indigo-500/30 border border-indigo-400/40 text-indigo-200 text-[10px] font-bold flex flex-col items-center justify-center leading-tight active:scale-95 transition';
+        txt.textContent = 'Sıralı';
+      } else {
+        btn.className = 'w-14 h-10 rounded-2xl bg-white/10 text-slate-400 text-[10px] font-bold flex flex-col items-center justify-center leading-tight active:scale-95 transition';
+        txt.textContent = 'Tek';
+      }
+    }
+
+    function openSleepModal() {
+      const options = [
+        { min: 0, label: 'Kapalı' },
+        { min: 15, label: '15 Dakika' },
+        { min: 30, label: '30 Dakika' },
+        { min: 45, label: '45 Dakika' },
+        { min: 60, label: '60 Dakika' }
+      ];
+      openModal(`
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-base font-extrabold">Uyku Zamanlayıcısı</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Süre dolunca ses otomatik durur</p>
+          </div>
+          <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold">✕</button>
+        </div>
+        <div class="grid grid-cols-2 gap-2.5">
+          ${options.map(o => `
+            <button onclick="setSleepTimer(${o.min})" class="py-3 px-4 rounded-2xl text-xs font-bold border transition active:scale-95 ${
+              o.min === 0
+                ? 'col-span-2 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                : 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800/70 text-indigo-700 dark:text-indigo-300'
+            }">
+              ${o.label}
+            </button>
+          `).join('')}
+        </div>
+      `);
+    }
+
+    function setSleepTimer(minutes) {
+      clearInterval(sleepInterval);
+      sleepInterval = null;
+      sleepTimerEnd = null;
+
+      if (minutes === 0) {
+        document.getElementById('sleep-pill-text').textContent = 'Uyku';
+        closeModal();
+        showToast('Uyku zamanlayıcısı kapatıldı');
+        return;
+      }
+
+      sleepTimerEnd = Date.now() + minutes * 60 * 1000;
+      updateSleepCountdown();
+      sleepInterval = setInterval(updateSleepCountdown, 1000);
+      closeModal();
+      showToast(`Uyku zamanlayıcısı: ${minutes} dk`);
+    }
+
+    function updateSleepCountdown() {
+      if (!sleepTimerEnd) return;
+      const leftMs = sleepTimerEnd - Date.now();
+      if (leftMs <= 0) {
+        clearInterval(sleepInterval);
+        sleepInterval = null;
+        sleepTimerEnd = null;
+        document.getElementById('sleep-pill-text').textContent = 'Uyku';
+        if (!audio.paused) audio.pause();
+        showToast('Uyku zamanlayıcısı doldu, ses durduruldu');
+        return;
+      }
+      const leftSec = Math.ceil(leftMs / 1000);
+      const m = Math.floor(leftSec / 60);
+      const s = leftSec % 60;
+      document.getElementById('sleep-pill-text').textContent = `${m}:${String(s).padStart(2, '0')}`;
+    }
+
+    /* ============================================================================
+       8. CUSTOM DURATION & TIMESTAMP MP3 SPLITTER MODAL
+       ============================================================================ */
+    let splitState = {
+      trackId: null,
+      tab: 'custom', // 'custom' | 'equal'
+      cutPoints: [], // sorted seconds strictly inside (0, duration)
+      customTitles: {}, // index -> edited title string
+      equalCount: 2,
+      keepOriginal: true,
+      previewBlobUrl: null,
+      isProcessing: false,
+      createdTracks: null // array after completion
+    };
+
+    async function openSplitModal(trackId) {
+      const track = tracks.find(t => t.id === trackId);
+      if (!track) return;
+      if (!track.duration || track.duration < 3) {
+        showToast('Bu parça bölünmek için çok kısa', true);
+        return;
+      }
+
+      // Pause main audio so preview audio doesn't clash
+      if (!audio.paused) audio.pause();
+      cleanupPreviewAudio();
+
+      const fileRec = await idbGet('files', track.fileId);
+      if (!fileRec || !fileRec.blob) {
+        showToast('Ses dosyası okunamadı', true);
+        return;
+      }
+
+      splitState = {
+        trackId,
+        tab: 'custom',
+        cutPoints: [],
+        customTitles: {},
+        equalCount: 2,
+        keepOriginal: true,
+        previewBlobUrl: URL.createObjectURL(fileRec.blob),
+        isProcessing: false,
+        createdTracks: null
+      };
+
+      previewAudio.src = splitState.previewBlobUrl;
+      previewAudio.currentTime = 0;
+      renderSplitModal();
+    }
+
+    function cleanupPreviewAudio() {
+      previewAudio.pause();
+      previewAudio.removeAttribute('src');
+      if (splitState.previewBlobUrl) {
+        URL.revokeObjectURL(splitState.previewBlobUrl);
+        splitState.previewBlobUrl = null;
+      }
+    }
+
+    function getActiveSegments(track) {
+      const dur = track.duration;
+      let points = [];
+      if (splitState.tab === 'equal') {
+        const n = splitState.equalCount;
+        for (let i = 1; i < n; i++) {
+          points.push((dur / n) * i);
+        }
+      } else {
+        points = [...splitState.cutPoints].sort((a, b) => a - b);
+      }
+
+      const bounds = [0, ...points, dur];
+      const segments = [];
+      for (let i = 0; i < bounds.length - 1; i++) {
+        const start = bounds[i];
+        const end = bounds[i + 1];
+        const defaultTitle = `${track.title} - Parça ${i + 1}`;
+        segments.push({
+          index: i,
+          start,
+          end,
+          duration: Math.max(0, end - start),
+          title: splitState.customTitles[i] !== undefined ? splitState.customTitles[i] : defaultTitle
+        });
+      }
+      return segments;
+    }
+
+    function renderSplitModal() {
+      const track = tracks.find(t => t.id === splitState.trackId);
+      if (!track) return;
+
+      // Completion screen after creating real MP3s
+      if (splitState.createdTracks) {
+        const createdHtml = splitState.createdTracks.map((ct, idx) => `
+          <div class="flex items-center justify-between gap-2 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700">
+            <div class="min-w-0 flex-1">
+              <p class="text-xs font-extrabold text-slate-900 dark:text-white truncate">${escapeHtml(ct.title)}</p>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">${formatDurationTr(ct.duration)} • ${formatBytes(ct.size)}</p>
+            </div>
+            <button onclick="downloadTrackFile('${ct.id}')" class="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold shrink-0 active:scale-95 transition">
+              ⬇️ İndir (.${ct.ext || 'mp3'})
+            </button>
+          </div>
+        `).join('');
+
+        openModal(`
+          <div class="text-center mb-4">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-2 text-xl">✅</div>
+            <h3 class="text-base font-extrabold">${splitState.createdTracks.length} Yeni Ses Dosyası Oluşturuldu</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Tüm parçalar kütüphanenize ayrı dosyalar olarak kaydedildi.</p>
+          </div>
+          <div class="space-y-2 max-h-64 overflow-y-auto mb-4">
+            ${createdHtml}
+          </div>
+          <button onclick="closeModal()" class="w-full py-3 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-extrabold active:scale-[0.98] transition">
+            Kütüphaneye Dön
+          </button>
+        `);
+        return;
+      }
+
+      const segments = getActiveSegments(track);
+      const lastCut = splitState.cutPoints.length > 0 ? splitState.cutPoints[splitState.cutPoints.length - 1] : 0;
+      const remainingSec = Math.max(0, track.duration - lastCut);
+      const savedMarkers = (track.markers || []).filter(m => m > 1 && m < track.duration - 1);
+
+      // Proportional visual timeline bar
+      const timelineHtml = segments.map((seg, i) => {
+        const pct = Math.max(4, (seg.duration / track.duration) * 100);
+        const col = SEG_COLORS[i % SEG_COLORS.length];
+        return `
+          <div style="width:${pct}%" class="h-7 ${col.bg} flex items-center justify-center text-[10px] font-extrabold text-white border-r border-white/30 last:border-0 overflow-hidden px-1" title="${escapeHtml(seg.title)}">
+            ${i + 1}
+          </div>
+        `;
+      }).join('');
+
+      // Resulting segments editable list
+      const segmentsListHtml = segments.map((seg, i) => {
+        const col = SEG_COLORS[i % SEG_COLORS.length];
+        const canRemoveCut = splitState.tab === 'custom' && segments.length > 1 && i < segments.length - 1;
+        return `
+          <div class="p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700/80 space-y-1.5">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full ${col.dot} shrink-0"></span>
+              <input type="text" value="${escapeHtml(seg.title)}" onchange="updateSegmentTitle(${i}, this.value)" class="flex-1 min-w-0 bg-transparent text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:bg-white dark:focus:bg-slate-900 px-1.5 py-0.5 rounded-lg" />
+              ${canRemoveCut ? `
+                <button onclick="removeCutAtIndex(${i})" class="px-2 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 text-[10px] font-bold shrink-0 active:scale-95 transition" title="Bu kesimi kaldır">
+                  ✕ Kesimi Sil
+                </button>
+              ` : ''}
+            </div>
+            <div class="flex items-center justify-between text-[11px] pl-4">
+              <span class="font-mono font-semibold text-slate-500 dark:text-slate-400">${formatTime(seg.start)} – ${formatTime(seg.end)}</span>
+              <span class="px-2 py-0.5 rounded-md ${col.soft} text-slate-800 dark:text-slate-200 font-bold text-[10px]">${formatDurationTr(seg.duration)}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Custom Tab Body
+      const customTabHtml = `
+        <!-- Import Markers Banner (if main player has markers) -->
+        ${savedMarkers.length > 0 ? `
+          <div class="p-2.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex items-center justify-between gap-2 mb-3">
+            <span class="text-[11px] font-semibold text-amber-900 dark:text-amber-200">📍 Ana oynatıcıda ${savedMarkers.length} işaret var</span>
+            <button onclick="importMainMarkers()" class="px-2.5 py-1.5 rounded-xl bg-amber-500 text-white text-[10px] font-extrabold active:scale-95 transition shrink-0">
+              İşaretleri Aktar
+            </button>
+          </div>
+        ` : ''}
+
+        <!-- Add Part by Duration -->
+        <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 mb-3">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-extrabold text-slate-800 dark:text-slate-200">Süreyle Parça Ekle</span>
+            <span class="text-[11px] font-bold text-indigo-600 dark:text-indigo-400">Kalan süre: ${formatTime(remainingSec)}</span>
+          </div>
+          <form onsubmit="addPartByDuration(event)" class="flex items-center gap-2">
+            <div class="flex items-center gap-1 flex-1">
+              <input id="dur-min-input" type="number" min="0" max="999" placeholder="8" class="w-full rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-2.5 py-2 text-center text-xs font-extrabold text-slate-900 dark:text-white" />
+              <span class="text-[11px] font-bold text-slate-500">dk</span>
+            </div>
+            <div class="flex items-center gap-1 flex-1">
+              <input id="dur-sec-input" type="number" min="0" max="59" placeholder="0" class="w-full rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-2.5 py-2 text-center text-xs font-extrabold text-slate-900 dark:text-white" />
+              <span class="text-[11px] font-bold text-slate-500">sn</span>
+            </div>
+            <button type="submit" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shrink-0 active:scale-95 transition">
+              + Parça Ekle
+            </button>
+          </form>
+          <p class="text-[10px] text-slate-400 mt-1.5">Örn: 8 dk, sonra 17 dk ekleyin; kalan süre otomatik son parça olur.</p>
+        </div>
+
+        <!-- Inline Mini Audio Preview Player -->
+        <div class="p-3 rounded-2xl bg-slate-900 dark:bg-slate-950 text-white mb-3 space-y-2">
+          <div class="flex items-center justify-between text-[11px]">
+            <span class="font-bold text-indigo-300">Dinleyerek Kesim Noktası Seç</span>
+            <span id="preview-time-label" class="font-mono font-bold text-white tabular-nums">${formatTime(previewAudio.currentTime || 0)} / ${formatTime(track.duration)}</span>
+          </div>
+          <input id="preview-seek" type="range" min="0" max="${track.duration}" value="${previewAudio.currentTime || 0}" step="0.1" oninput="onPreviewSeek(this.value)" class="seek-slider bg-slate-700" />
+          <div class="flex items-center justify-between gap-2 pt-0.5">
+            <div class="flex items-center gap-1.5">
+              <button type="button" onclick="skipPreview(-5)" class="px-2.5 py-1.5 rounded-xl bg-white/10 text-[11px] font-bold active:scale-95 transition">-5s</button>
+              <button type="button" onclick="togglePreviewPlay()" id="preview-play-btn" class="px-3 py-1.5 rounded-xl bg-indigo-500 text-white text-[11px] font-bold active:scale-95 transition">${previewAudio.paused ? '▶ Dinle' : '⏸ Duraklat'}</button>
+              <button type="button" onclick="skipPreview(5)" class="px-2.5 py-1.5 rounded-xl bg-white/10 text-[11px] font-bold active:scale-95 transition">+5s</button>
+            </div>
+            <button type="button" onclick="cutAtPreviewTime()" class="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] font-extrabold active:scale-95 transition">
+              ✂️ Bu Saniyeden Kes
+            </button>
+          </div>
+        </div>
+      `;
+
+      // Equal Tab Body
+      const equalTabHtml = `
+        <div class="grid grid-cols-4 gap-2 mb-3">
+          ${[2, 3, 4, 5, 6, 8, 10].map(n => `
+            <button onclick="setEqualSplitCount(${n})" class="py-2.5 rounded-2xl text-xs font-extrabold border transition active:scale-95 ${
+              splitState.equalCount === n
+                ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+            }">
+              ${n} Parça
+            </button>
+          `).join('')}
+        </div>
+      `;
+
+      openModal(`
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-3">
+          <div class="min-w-0 pr-2">
+            <h3 class="text-base font-extrabold truncate">Parçayı Böl (Yeni MP3)</h3>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate">${escapeHtml(track.title)} • ${formatTime(track.duration)}</p>
+          </div>
+          <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold shrink-0">✕</button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl grid grid-cols-2 gap-1 mb-3">
+          <button onclick="setSplitTab('custom')" class="py-2 rounded-xl text-xs font-extrabold transition ${splitState.tab === 'custom' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}">
+            Özel Böl
+          </button>
+          <button onclick="setSplitTab('equal')" class="py-2 rounded-xl text-xs font-extrabold transition ${splitState.tab === 'equal' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400'}">
+            Eşit Böl
+          </button>
+        </div>
+
+        <!-- Proportional Timeline Bar -->
+        <div class="mb-3">
+          <div class="flex items-center justify-between text-[10px] font-bold text-slate-400 mb-1">
+            <span>Zaman Çizelgesi (${segments.length} Parça)</span>
+            ${splitState.tab === 'custom' && splitState.cutPoints.length > 0 ? `<button onclick="clearAllCuts()" class="text-rose-500 hover:underline">Kesimleri Temizle</button>` : ''}
+          </div>
+          <div class="w-full rounded-xl overflow-hidden flex shadow-inner">
+            ${timelineHtml}
+          </div>
+        </div>
+
+        <!-- Tab-Specific Controls -->
+        ${splitState.tab === 'custom' ? customTabHtml : equalTabHtml}
+
+        <!-- Resulting Segments List -->
+        <div class="mb-3">
+          <p class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">Oluşacak Parçalar (${segments.length})</p>
+          <div class="space-y-2 max-h-48 overflow-y-auto pr-0.5">
+            ${segmentsListHtml}
+          </div>
+        </div>
+
+        <!-- Keep Original Checkbox -->
+        <label class="flex items-center gap-2.5 mb-3.5 cursor-pointer select-none">
+          <input type="checkbox" ${splitState.keepOriginal ? 'checked' : ''} onchange="splitState.keepOriginal = this.checked" class="w-4 h-4 rounded accent-indigo-600" />
+          <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">Orijinal dosyayı kütüphanede tut</span>
+        </label>
+
+        <!-- Execute Split Button -->
+        <button onclick="executeRealSplit()" ${splitState.isProcessing || segments.length < 2 ? 'disabled' : ''} class="w-full py-3.5 rounded-2xl text-xs font-extrabold shadow-md transition flex items-center justify-center gap-2 ${
+          splitState.isProcessing || segments.length < 2
+            ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed'
+            : 'bg-indigo-600 hover:bg-indigo-500 text-white active:scale-[0.98]'
+        }">
+          ${splitState.isProcessing
+            ? `<span>⏳ MP3 dosyaları oluşturuluyor...</span>`
+            : (segments.length < 2 ? `<span>Bölmek için en az 1 parça veya kesim ekleyin</span>` : `<span>✂️ ${segments.length} Yeni MP3 Oluştur</span>`)
+          }
+        </button>
+      `);
+
+      const pSeek = document.getElementById('preview-seek');
+      if (pSeek) updateSeekBarFill(pSeek, previewAudio.currentTime || 0, track.duration);
+    }
+
+    function setSplitTab(tab) {
+      splitState.tab = tab;
+      splitState.customTitles = {};
+      renderSplitModal();
+    }
+
+    function setEqualSplitCount(n) {
+      splitState.equalCount = n;
+      splitState.customTitles = {};
+      renderSplitModal();
+    }
+
+    function addPartByDuration(e) {
+      e.preventDefault();
+      const track = tracks.find(t => t.id === splitState.trackId);
+      if (!track) return;
+
+      const mins = parseInt(document.getElementById('dur-min-input').value || '0', 10);
+      const secs = parseInt(document.getElementById('dur-sec-input').value || '0', 10);
+      const addSec = Math.max(0, (isNaN(mins) ? 0 : mins) * 60 + (isNaN(secs) ? 0 : secs));
+
+      if (addSec < 1) {
+        showToast('Geçerli bir dakika veya saniye girin', true);
+        return;
+      }
+
+      const lastCut = splitState.cutPoints.length > 0 ? splitState.cutPoints[splitState.cutPoints.length - 1] : 0;
+      const newCut = lastCut + addSec;
+
+      if (newCut >= track.duration - 1) {
+        showToast(`Girilen süre kalan süreyi (${formatTime(track.duration - lastCut)}) aşıyor`, true);
+        return;
+      }
+
+      splitState.cutPoints.push(newCut);
+      splitState.cutPoints.sort((a, b) => a - b);
+      renderSplitModal();
+    }
+
+    function cutAtPreviewTime() {
+      const track = tracks.find(t => t.id === splitState.trackId);
+      if (!track) return;
+      const t = Math.round(previewAudio.currentTime || 0);
+      if (t <= 1 || t >= track.duration - 1) {
+        showToast('Başlangıç veya bitişten farklı bir saniye seçin', true);
+        return;
+      }
+      if (splitState.cutPoints.some(c => Math.abs(c - t) < 1.5)) {
+        showToast('Bu noktada zaten kesim var');
+        return;
+      }
+      splitState.cutPoints.push(t);
+      splitState.cutPoints.sort((a, b) => a - b);
+      renderSplitModal();
+      showToast(`Kesim eklendi: ${formatTime(t)}`);
+    }
+
+    function importMainMarkers() {
+      const track = tracks.find(t => t.id === splitState.trackId);
+      if (!track || !track.markers) return;
+      const valid = track.markers.filter(m => m > 1 && m < track.duration - 1);
+      const merged = [...splitState.cutPoints];
+      valid.forEach(m => {
+        if (!merged.some(c => Math.abs(c - m) < 1.5)) merged.push(m);
+      });
+      splitState.cutPoints = merged.sort((a, b) => a - b);
+      renderSplitModal();
+      showToast(`${valid.length} kesim işareti aktarıldı`);
+    }
+
+    function removeCutAtIndex(cutIdx) {
+      splitState.cutPoints.splice(cutIdx, 1);
+      splitState.customTitles = {};
+      renderSplitModal();
+    }
+
+    function clearAllCuts() {
+      splitState.cutPoints = [];
+      splitState.customTitles = {};
+      renderSplitModal();
+    }
+
+    function updateSegmentTitle(idx, val) {
+      splitState.customTitles[idx] = val.trim();
+    }
+
+    /* ---------- Preview Audio Controls ---------- */
+    function togglePreviewPlay() {
+      if (previewAudio.paused) {
+        previewAudio.play().catch(() => {});
+      } else {
+        previewAudio.pause();
+      }
+      updatePreviewControlsUI();
+    }
+
+    function skipPreview(delta) {
+      const track = tracks.find(t => t.id === splitState.trackId);
+      if (!track) return;
+      previewAudio.currentTime = Math.min(Math.max(0, (previewAudio.currentTime || 0) + delta), track.duration);
+      updatePreviewControlsUI();
+    }
+
+    function onPreviewSeek(val) {
+      previewAudio.currentTime = parseFloat(val) || 0;
+      updatePreviewControlsUI();
+    }
+
+    function updatePreviewControlsUI() {
+      const track = tracks.find(t => t.id === splitState.trackId);
+      if (!track) return;
+      const cur = previewAudio.currentTime || 0;
+      const lbl = document.getElementById('preview-time-label');
+      const seek = document.getElementById('preview-seek');
+      const btn = document.getElementById('preview-play-btn');
+      if (lbl) lbl.textContent = `${formatTime(cur)} / ${formatTime(track.duration)}`;
+      if (seek) {
+        seek.value = cur;
+        updateSeekBarFill(seek, cur, track.duration);
+      }
+      if (btn) btn.textContent = previewAudio.paused ? '▶ Dinle' : '⏸ Duraklat';
+    }
+
+    previewAudio.addEventListener('timeupdate', updatePreviewControlsUI);
+    previewAudio.addEventListener('play', updatePreviewControlsUI);
+    previewAudio.addEventListener('pause', updatePreviewControlsUI);
+
+    /* ---------- Execute Lossless MP3 (or Fallback WAV) Slicing ---------- */
+    async function executeRealSplit() {
+      const track = tracks.find(t => t.id === splitState.trackId);
+      if (!track || splitState.isProcessing) return;
+
+      const segments = getActiveSegments(track);
+      if (segments.length < 2) return;
+
+      previewAudio.pause();
+      splitState.isProcessing = true;
+      renderSplitModal();
+
+      // Yield a frame so loading state paints cleanly
+      await new Promise(r => setTimeout(r, 40));
+
+      try {
+        const fileRec = await idbGet('files', track.fileId);
+        if (!fileRec || !fileRec.blob) throw new Error('Kaynak dosya bulunamadı');
+
+        const arrayBuffer = await fileRec.blob.arrayBuffer();
+        const mp3Index = indexMp3Frames(arrayBuffer);
+
+        let decodedFallbackBuffer = null;
+        if (!mp3Index) {
+          // Non-MP3 fallback (WAV / M4A / OGG) via Web Audio API
+          if (fileRec.blob.size > 85 * 1024 * 1024) {
+            throw new Error('Bu dosya MP3 formatında değil ve telefon belleği için çok büyük.');
+          }
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          const ctx = new AudioCtx();
+          try {
+            decodedFallbackBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
+          } finally {
+            if (ctx.close) ctx.close().catch(() => {});
+          }
+        }
+
+        const baseIndex = tracks.findIndex(t => t.id === track.id);
+        const newlyCreated = [];
+
+        for (let i = 0; i < segments.length; i++) {
+          const seg = segments[i];
+          const sliced = mp3Index
+            ? sliceMp3Buffer(arrayBuffer, mp3Index, seg.start, seg.end)
+            : encodeAudioBufferSegmentToWav(decodedFallbackBuffer, seg.start, seg.end);
+
+          const newFileId = generateId('file');
+          const safeTitle = seg.title || `${track.title} - Parça ${i + 1}`;
+          const fileName = `${sanitizeFilename(safeTitle)}.${sliced.ext}`;
+
+          await idbPut('files', {
+            id: newFileId,
+            name: fileName,
+            type: sliced.mimeType,
+            size: sliced.blob.size,
+            blob: sliced.blob,
+            createdAt: Date.now() + i
+          });
+
+          const newTrack = {
+            id: generateId('trk'),
+            fileId: newFileId,
+            title: safeTitle,
+            fileName,
+            mimeType: sliced.mimeType,
+            size: sliced.blob.size,
+            duration: sliced.duration,
+            lastPosition: 0,
+            markers: [],
+            ext: sliced.ext,
+            createdAt: Date.now() + i,
+            order: 0
+          };
+
+          await idbPut('tracks', newTrack);
+          newlyCreated.push(newTrack);
+        }
+
+        if (splitState.keepOriginal) {
+          tracks.splice(baseIndex + 1, 0, ...newlyCreated);
+        } else {
+          const wasCurrent = currentTrack && currentTrack.id === track.id;
+          await idbDelete('tracks', track.id);
+          await idbDelete('files', track.fileId);
+          removeLocalPosMirror(track.id);
+          tracks.splice(baseIndex, 1, ...newlyCreated);
+          if (wasCurrent) {
+            audio.pause();
+            currentTrack = null;
+            await loadTrack(newlyCreated[0].id, false);
+          }
+        }
+
+        for (let i = 0; i < tracks.length; i++) {
+          tracks[i].order = i;
+          await idbPut('tracks', tracks[i]);
+        }
+
+        cleanupPreviewAudio();
+        splitState.isProcessing = false;
+        splitState.createdTracks = newlyCreated;
+        renderTrackList();
+        updateStorageInfo();
+        renderSplitModal();
+        showToast(`${newlyCreated.length} yeni dosya oluşturuldu`);
+      } catch (err) {
+        console.error('Bölme hatası:', err);
+        splitState.isProcessing = false;
+        renderSplitModal();
+        showToast(err.message || 'Parça bölünürken hata oluştu', true);
+      }
+    }
+
+    /* ============================================================================
+       9. DOWNLOAD, RENAME & DELETE TRACKS
+       ============================================================================ */
+    async function downloadTrackFile(trackId) {
+      const track = tracks.find(t => t.id === trackId);
+      if (!track) return;
+      const fileRec = await idbGet('files', track.fileId);
+      if (!fileRec || !fileRec.blob) {
+        showToast('Dosya bulunamadı', true);
+        return;
+      }
+
+      const ext = track.ext || (track.mimeType === 'audio/wav' ? 'wav' : 'mp3');
+      const dlName = `${sanitizeFilename(track.title)}.${ext}`;
+      const url = URL.createObjectURL(fileRec.blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = dlName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+      showToast(`İndiriliyor: ${dlName}`);
+    }
+
+    function openRenameModal(trackId) {
+      const track = tracks.find(t => t.id === trackId);
+      if (!track) return;
+      openModal(`
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-base font-extrabold">Yeniden Adlandır</h3>
+          <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold">✕</button>
+        </div>
+        <form onsubmit="submitRename(event, '${track.id}')" class="space-y-3">
+          <input id="rename-input" type="text" required value="${escapeHtml(track.title)}" class="w-full rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3.5 py-3 text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <button type="submit" class="w-full py-3 rounded-2xl bg-indigo-600 text-white text-xs font-extrabold active:scale-[0.98] transition">Kaydet</button>
+        </form>
+      `);
+      setTimeout(() => document.getElementById('rename-input')?.focus(), 50);
+    }
+
+    async function submitRename(e, trackId) {
+      e.preventDefault();
+      const val = document.getElementById('rename-input').value.trim();
+      if (!val) return;
+      const track = tracks.find(t => t.id === trackId);
+      if (!track) return;
+      track.title = val;
+      await idbPut('tracks', track);
+      closeModal();
+      updatePlayerUI();
+      renderTrackList();
+      showToast('İsim güncellendi');
+    }
+
+    function openDeleteModal(trackId) {
+      const track = tracks.find(t => t.id === trackId);
+      if (!track) return;
+      openModal(`
+        <div class="text-center space-y-3 py-1">
+          <div class="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto text-xl">🗑️</div>
+          <h3 class="text-base font-extrabold">Parçayı Sil?</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">
+            <strong>${escapeHtml(track.title)}</strong> cihaz hafızasından kalıcı olarak silinecek.
+          </p>
+          <div class="flex gap-2 pt-2">
+            <button onclick="closeModal()" class="flex-1 py-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-xs font-bold">Vazgeç</button>
+            <button onclick="confirmDeleteTrack('${track.id}')" class="flex-1 py-3 rounded-2xl bg-rose-600 text-white text-xs font-bold active:scale-95 transition">Sil</button>
+          </div>
+        </div>
+      `);
+    }
+
+    async function confirmDeleteTrack(trackId) {
+      const track = tracks.find(t => t.id === trackId);
+      if (!track) return;
+
+      tracks = tracks.filter(t => t.id !== trackId);
+      await idbDelete('tracks', trackId);
+      await idbDelete('files', track.fileId);
+      removeLocalPosMirror(trackId);
+
+      if (currentTrack && currentTrack.id === trackId) {
+        audio.pause();
+        currentTrack = null;
+        if (currentBlobUrl) {
+          URL.revokeObjectURL(currentBlobUrl);
+          currentBlobUrl = null;
+        }
+        audio.removeAttribute('src');
+        prefs.lastActiveTrackId = tracks.length > 0 ? tracks[0].id : null;
+        savePrefs();
+        if (tracks.length > 0) {
+          await loadTrack(tracks[0].id, false);
+        } else {
+          updatePlayerUI();
+        }
+      }
+
+      closeModal();
+      renderTrackList();
+      updateStorageInfo();
+      showToast('Parça silindi');
+    }
+
+    /* ============================================================================
+       10. LIBRARY RENDERING & SEARCH
+       ============================================================================ */
+    function onSearchInput(val) {
+      searchQuery = val.trim().toLocaleLowerCase('tr');
+      renderTrackList();
+    }
+
+    function renderTrackList() {
+      const container = document.getElementById('track-list');
+      const searchWrap = document.getElementById('search-box-wrap');
+      searchWrap.classList.toggle('hidden', tracks.length < 4);
+
+      const filtered = searchQuery
+        ? tracks.filter(t => t.title.toLocaleLowerCase('tr').includes(searchQuery))
+        : tracks;
+
+      document.getElementById('track-count-badge').textContent = `${tracks.length} Parça`;
+
+      if (tracks.length === 0) {
+        container.innerHTML = `
+          <div class="rounded-3xl bg-white dark:bg-slate-800/60 border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center">
+            <div class="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto mb-3">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+              </svg>
+            </div>
+            <h3 class="text-sm font-extrabold text-slate-900 dark:text-white mb-1">Henüz MP3 Eklenmedi</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
+              Ses dosyalarınız telefonunuzda saklanır, kaldığı saniyeden devam eder ve istediğiniz dakikalardan gerçek yeni MP3 dosyalarına bölünür.
+            </p>
+            <button onclick="document.getElementById('mp3-file-input').click()" class="px-5 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-sm active:scale-95 transition">
+              + İlk MP3 Dosyasını Ekle
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<p class="text-center text-xs text-slate-400 py-8">Aramanızla eşleşen parça bulunamadı.</p>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(t => {
+        const isActive = currentTrack && currentTrack.id === t.id;
+        const pct = t.duration > 0 ? Math.min(100, ((t.lastPosition || 0) / t.duration) * 100) : 0;
+        const hasResume = (t.lastPosition || 0) > 2 && (t.lastPosition < t.duration - 2);
+
+        return `
+          <div class="rounded-2xl p-3.5 border transition ${
+            isActive
+              ? 'bg-indigo-50/90 dark:bg-indigo-950/40 border-indigo-400 dark:border-indigo-500/70 shadow-sm'
+              : 'bg-white dark:bg-slate-800/70 border-slate-200/80 dark:border-slate-700/80'
+          }">
+            <div class="flex items-start gap-3">
+              <button onclick="onTrackCardPlay('${t.id}')" class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 active:scale-95 transition ${
+                isActive
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
+              }">
+                ${isActive && !audio.paused
+                  ? `<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`
+                  : `<svg class="w-5 h-5 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`
+                }
+              </button>
+
+              <div onclick="onTrackCardPlay('${t.id}')" class="min-w-0 flex-1 cursor-pointer">
+                <h3 class="text-xs font-extrabold text-slate-900 dark:text-white truncate">${escapeHtml(t.title)}</h3>
+                <div class="flex items-center gap-2 mt-1 flex-wrap">
+                  <span id="time-${t.id}" class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 tabular-nums">
+                    ${hasResume ? `Kaldığı yer: ${formatTime(t.lastPosition)} / ${formatTime(t.duration)}` : formatTime(t.duration)}
+                  </span>
+                  <span class="text-[10px] font-medium text-slate-400">${formatBytes(t.size)}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Resume Progress Bar -->
+            <div class="w-full h-1.5 rounded-full bg-slate-200/80 dark:bg-slate-700/80 overflow-hidden mt-3 mb-2.5">
+              <div id="prog-${t.id}" class="h-full rounded-full bg-indigo-500 transition-all duration-300" style="width:${pct}%"></div>
+            </div>
+
+            <!-- Compact Action Row -->
+            <div class="flex items-center justify-end gap-1.5 flex-wrap">
+              <button onclick="openSplitModal('${t.id}')" class="px-2.5 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 text-[11px] font-bold active:scale-95 transition">
+                ✂️ Böl
+              </button>
+              <button onclick="downloadTrackFile('${t.id}')" class="px-2.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold active:scale-95 transition">
+                ⬇️ İndir
+              </button>
+              <button onclick="openRenameModal('${t.id}')" class="px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-700/80 text-slate-600 dark:text-slate-300 text-[11px] font-bold active:scale-95 transition">
+                ✏️
+              </button>
+              <button onclick="openDeleteModal('${t.id}')" class="px-2.5 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-[11px] font-bold active:scale-95 transition">
+                🗑️
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function onTrackCardPlay(trackId) {
+      if (currentTrack && currentTrack.id === trackId) {
+        togglePlayPause();
+      } else {
+        loadTrack(trackId, true);
+      }
+    }
+
+    async function updateStorageInfo() {
+      try {
+        const totalBytes = tracks.reduce((sum, t) => sum + (t.size || 0), 0);
+        document.getElementById('storage-info').textContent = `${tracks.length} dosya • ${formatBytes(totalBytes)} cihazda saklı`;
+      } catch (_) {
+        document.getElementById('storage-info').textContent = `${tracks.length} parça`;
+      }
+    }
+
+    /* ============================================================================
+       11. MODAL HELPERS & BOOTSTRAP
+       ============================================================================ */
+    function openModal(html) {
+      const overlay = document.getElementById('modal-overlay');
+      document.getElementById('modal-content').innerHTML = html;
+      overlay.classList.remove('hidden');
+      overlay.classList.add('flex');
+    }
+
+    function closeModal() {
+      cleanupPreviewAudio();
+      const overlay = document.getElementById('modal-overlay');
+      overlay.classList.add('hidden');
+      overlay.classList.remove('flex');
+    }
+
+    function closeModalOnBackdrop(e) {
+      if (e.target.id === 'modal-overlay') closeModal();
+    }
+
+    async function initApp() {
+      loadPrefs();
+      try {
+        await openDatabase();
+        const storedTracks = await idbGetAll('tracks');
+        tracks = storedTracks.sort((a, b) => (a.order ?? a.createdAt) - (b.order ?? b.createdAt));
+
+        for (const t of tracks) {
+          const mirror = getLocalPosMirror(t.id);
+          if (mirror !== null && isFinite(mirror) && mirror >= 0 && mirror <= t.duration) {
+            t.lastPosition = mirror;
+          }
+        }
+
+        renderTrackList();
+        updateStorageInfo();
+
+        if (tracks.length > 0) {
+          const targetId = (prefs.lastActiveTrackId && tracks.some(t => t.id === prefs.lastActiveTrackId))
+            ? prefs.lastActiveTrackId
+            : tracks[0].id;
+          await loadTrack(targetId, false);
+        } else {
+          updatePlayerUI();
+        }
+      } catch (err) {
+        console.error('Başlatma hatası:', err);
+        showToast('Depolama başlatılamadı', true);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>
